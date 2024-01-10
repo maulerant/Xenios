@@ -1,6 +1,7 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\GroupOfMessagesController;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,6 +15,17 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::group([
+    'prefix' => 'groups'
+], function (Router $router) {
+    $router->get('{id}', [GroupOfMessagesController::class, 'index'])
+        ->name('groups.get');
+    $router->get('', [GroupOfMessagesController::class, 'all'])
+        ->name('groups.all');
+    $router->post('', [GroupOfMessagesController::class, 'add'])
+        ->name('groups.add');
+    $router->patch('{id}', [GroupOfMessagesController::class, 'update'])
+        ->name('groups.update');
+    $router->delete('{id}', [GroupOfMessagesController::class, 'delete'])
+        ->name('groups.delete');
 });
