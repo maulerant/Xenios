@@ -1,0 +1,77 @@
+version: "3.5"
+
+services:
+  #PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: .docker/app/Dockerfile
+    container_name: app
+    restart: unless-stopped
+    user: ${CURRENT_UID:-1000:1000}
+    environment:
+      COMPOSER_MEMORY_LIMIT: -1
+      ENVIRONMENT: debug
+      APP_ENV: local
+      LOG_CHANNEL: single
+      DB_HOST: db
+      DB_NAME: test_db
+      DB_USER: root
+      DB_PASS: root_password
+
+    working_dir: /var/www
+    networks:
+      - app-network
+    volumes:
+      - ./temp:/.npm
+      - ./temp:/.composer
+      - .docker/app/data:/var/storage
+      - .docker/app/php.ini:/usr/local/etc/php/conf.d/local.ini
+      - .docker/app/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini
+      - .docker/app/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+      - .docker/app/xdebug_ip.ini:/usr/local/etc/php/conf.d/xdebug_ip.ini
+      - .docker/app/www.conf:/usr/local/etc/php-fpm.d/www.conf
+      - /var/www/.docker
+
+  #Nginx Service
+  webserver:
+    image: nginx:stable-alpine
+    depends_on: [ app ]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      app-network:
+        aliases:
+          - secure.localhost
+          - insecure.localhost
+    volumes:
+      - .:/var/www
+      - .docker/app/data:/var/storage
+      - .docker/nginx:/etc/nginx/conf.d
+      - /var/www/.docker
+
+  #MySQL Service
+  db:
+    image: mariadb:10
+    container_name: db
+    restart: unless-stopped
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_DATABASE: test_db
+      MYSQL_ROOT_PASSWORD: root_password
+    networks:
+      - app-network
+    volumes:
+      - dbdata:/var/lib/mysql
+    command: mysqld --sql_mode="" --character-set-server=utf8 --collation-server=utf8_general_ci --innodb-flush-log-at-trx-commit=0
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  dbdata:
