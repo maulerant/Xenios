@@ -1,0 +1,11 @@
+try_files $uri =404;
+fastcgi_split_path_info ^(.+\.php)(/.+)$;
+
+include fastcgi_params;
+fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+fastcgi_param PATH_INFO $fastcgi_path_info;
+fastcgi_param DOCUMENT_ROOT $realpath_root;
+
+fastcgi_param PHP_VALUE "date.timezone = Europe/Kiev";
+
+fastcgi_read_timeout 600;
