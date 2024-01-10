@@ -8,7 +8,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
-class GroupOfMessagesTest extends TestCase
+class GroupOfMessagesControllerTest extends TestCase
 {
     use DatabaseTransactions;
 

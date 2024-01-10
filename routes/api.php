@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\GroupOfMessagesController;
+use App\Http\Controllers\MessagesController;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 
@@ -28,4 +29,17 @@ Route::group([
         ->name('groups.update');
     $router->delete('{id}', [GroupOfMessagesController::class, 'delete'])
         ->name('groups.delete');
+});
+
+Route::group([
+    'prefix' => 'messages'
+], function (Router $router) {
+    $router->get('{groupId}', [MessagesController::class, 'index'])
+        ->name('messages.ofGroup');
+    $router->post('', [MessagesController::class, 'add'])
+        ->name('messages.add');
+    $router->patch('{id}', [MessagesController::class, 'update'])
+        ->name('messages.update');
+    $router->delete('{id}', [MessagesController::class, 'delete'])
+        ->name('messages.delete');
 });
