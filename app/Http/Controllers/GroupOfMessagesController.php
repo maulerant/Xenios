@@ -2,16 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Bus\CommandBusContract;
+use App\Bus\QueryBusContract;
 use App\Http\Requests\AddGroupRequest;
-use App\Models\GroupOfMessages;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
+use Modules\GroupOfMessages\Commands\CreateGroupOfMessagesCommand;
+use Modules\GroupOfMessages\Commands\DeleteGroupOfMessagesCommand;
+use Modules\GroupOfMessages\Commands\UpdateGroupOfMessagesCommand;
+use Modules\GroupOfMessages\Queries\FindAllGroupOfMessagesQuery;
+use Modules\GroupOfMessages\Queries\FindGroupOfMessagesQuery;
+use Modules\GroupOfMessages\ValueObjects\GroupName;
 
 class GroupOfMessagesController extends Controller
 {
+    public function __construct(
+        protected readonly CommandBusContract $commandBus,
+        protected readonly QueryBusContract $queryBus
+    ) {
+    }
+
     public function index(int $id): JsonResponse
     {
-        $group = GroupOfMessages::findOrFail($id);
+        $group = $this->queryBus->ask(
+            new FindGroupOfMessagesQuery($id)
+        );
 
         return response()->json([
             'success' => true,
@@ -22,43 +36,55 @@ class GroupOfMessagesController extends Controller
 
     public function all(): JsonResponse
     {
+        $groups = $this->queryBus->ask(
+            new FindAllGroupOfMessagesQuery()
+        );
+
         return response()->json([
             'success' => true,
-            'groups' => GroupOfMessages::query()
-                ->select('group_of_messages.*', DB::raw('max(messages.created_at) as last_message_created_at'))
-                ->leftJoin('messages', 'messages.group_id', 'group_of_messages.id')
-                ->groupBy('group_of_messages.id')
-                ->orderByDesc('last_message_created_at')
-                ->get()
+            'groups' => $groups
         ])->setStatusCode(200);
     }
 
     public function add(AddGroupRequest $request): JsonResponse
     {
-        $group = GroupOfMessages::create($request->all());
+        $groupId = $this->commandBus
+            ->dispatch(
+                new CreateGroupOfMessagesCommand(
+                    GroupName::from($request->input('name'))
+                )
+            );
 
         return response()->json([
             'success' => true,
-            'id' => $group->id
+            'id' => $groupId
         ])->setStatusCode(200);
     }
 
     public function update(int $id, AddGroupRequest $request): JsonResponse
     {
-        $group = GroupOfMessages::findOrFail($id);
-        $group->fill($request->all());
-        $group->save();
+        $groupId = $this->commandBus
+            ->dispatch(
+                new UpdateGroupOfMessagesCommand(
+                    $id,
+                    GroupName::from($request->input('name'))
+                )
+            );
 
         return response()->json([
             'success' => true,
-            'id' => $id
+            'id' => $groupId
         ])->setStatusCode(200);
     }
 
     public function delete(int $id): JsonResponse
     {
-        GroupOfMessages::findOrFail($id)
-            ->delete();
+        $this->commandBus
+            ->dispatch(
+                new DeleteGroupOfMessagesCommand(
+                    $id,
+                )
+            );
 
         return response()->json([
             'success' => true,
