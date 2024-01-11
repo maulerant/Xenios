@@ -35,15 +35,6 @@ class GroupOfMessagesController extends Controller
 
     public function add(AddGroupRequest $request): JsonResponse
     {
-        if (GroupOfMessages::query()
-            ->where('name', $request->input('name'))
-            ->exists()
-        ) {
-            return response()->json([
-                'error' => true,
-                'message' => 'group with this name already exists'
-            ])->setStatusCode(409);
-        }
         $group = GroupOfMessages::create($request->all());
 
         return response()->json([

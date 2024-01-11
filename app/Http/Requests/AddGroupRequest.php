@@ -12,7 +12,8 @@ class AddGroupRequest extends FormRequest
         return [
             'name' => [
                 'required',
-                'string'
+                'string',
+                'unique:group_of_messages,name'
             ]
         ];
     }

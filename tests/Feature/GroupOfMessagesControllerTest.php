@@ -52,7 +52,7 @@ class GroupOfMessagesControllerTest extends TestCase
             'name' => $group->name
         ]);
 
-        $response->assertStatus(409);
+        $response->assertStatus(422);
         $this->assertEquals(1, GroupOfMessages::query()-> where('name', $group->name)->count());
     }
 
