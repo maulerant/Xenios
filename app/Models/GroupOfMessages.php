@@ -9,6 +9,7 @@ use Illuminate\Support\Collection;
 
 /**
  * @property Collection $messages
+ * @property string $name
  */
 class GroupOfMessages extends Model
 {

@@ -7,23 +7,27 @@ namespace App\Repositories;
 
 use App\DTO\GroupOfMessageDTO;
 use App\Models\GroupOfMessages;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class GroupOfMessagesRepository implements GroupOfMessagesRepositoryInterface
 {
 
-    public function create(GroupOfMessageDTO $dto): GroupOfMessages
+    public function create(GroupOfMessageDTO $dto): array|Collection|Model|GroupOfMessages|Builder
     {
-        return GroupOfMessages::create($dto->toArray());
+        return GroupOfMessages::query()
+            ->create($dto->toArray());
     }
 
     /**
      * @throw  ModelNotFoundException
      */
-    public function update(int $id, GroupOfMessageDTO $dto): GroupOfMessages
+    public function update(int $id, GroupOfMessageDTO $dto): array|Collection|Model|GroupOfMessages|Builder
     {
-        $group = GroupOfMessages::findOrFail($id);
+        $group = GroupOfMessages::query()
+            ->findOrFail($id);
         $group->fill($dto->toArray());
         $group->save();
 
@@ -40,9 +44,10 @@ class GroupOfMessagesRepository implements GroupOfMessagesRepositoryInterface
     /**
      * @throw  ModelNotFoundException
      */
-    public function find(int $id): GroupOfMessages
+    public function find(int $id): array|Collection|Model|GroupOfMessages|Builder
     {
-        return GroupOfMessages::findOrFail($id);
+        return GroupOfMessages::query()
+            ->findOrFail($id);
     }
 
     public function getOrderedByLastMessageCreateTime(): Collection
@@ -53,5 +58,13 @@ class GroupOfMessagesRepository implements GroupOfMessagesRepositoryInterface
             ->groupBy('group_of_messages.id')
             ->orderByDesc('last_message_created_at')
             ->get();
+    }
+
+
+    public function getWithMessages(int $groupId): array|Collection|Model|GroupOfMessages|Builder
+    {
+        return GroupOfMessages::query()
+            ->with('messages')
+            ->findOrFail($groupId);
     }
 }

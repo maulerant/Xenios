@@ -41,4 +41,9 @@ class GroupOfMessagesService
     {
         return $this->repository->getOrderedByLastMessageCreateTime();
     }
+
+    public function getWithMessages(int $groupId): GroupOfMessages
+    {
+        return $this->repository->getWithMessages($groupId);
+    }
 }

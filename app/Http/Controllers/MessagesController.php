@@ -2,20 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\DTO\MessageDTO;
 use App\Http\Requests\AddMessageRequest;
 use App\Http\Requests\UpdateMessageRequest;
-use App\Models\GroupOfMessages;
 use App\Models\Message;
+use App\Services\GroupOfMessagesService;
+use App\Services\MessagesService;
 use Illuminate\Http\JsonResponse;
 
 class MessagesController extends Controller
 {
-    public function index(int $groupId): JsonResponse
+    public function __construct(
+        protected readonly MessagesService $service
+    ) {
+    }
+
+    public function index(int $groupId, GroupOfMessagesService $groupOfMessagesService): JsonResponse
     {
-        /** @var GroupOfMessages $group */
-        $group = GroupOfMessages::query()
-            ->with('messages')
-            ->findOrFail($groupId);
+        $group = $groupOfMessagesService->getWithMessages($groupId);
 
         return response()->json([
             'success' => true,
@@ -26,7 +30,13 @@ class MessagesController extends Controller
     public function add(AddMessageRequest $request): JsonResponse
     {
         /** @var Message $message */
-        $message = Message::create($request->all());
+        $message = $this->service->create(
+            new MessageDTO(
+                user: $request->input('user'),
+                group_id: (int) $request->input('group_id'),
+                text: $request->input('text'),
+            )
+        );
 
         return response()->json([
             'success' => true,
@@ -36,10 +46,7 @@ class MessagesController extends Controller
 
     public function update(int $id, UpdateMessageRequest $request): JsonResponse
     {
-        /** @var Message $message */
-        $message = Message::findOrFail($id);
-        $message->fill($request->all());
-        $message->save();
+        $message = $this->service->update($id, $request->input('text'));
 
         return response()->json([
             'success' => true,
@@ -49,8 +56,7 @@ class MessagesController extends Controller
 
     public function delete(int $id): JsonResponse
     {
-         Message::findOrFail($id)
-            ->delete();
+        $this->service->delete($id);
 
         return response()->json([
             'success' => true,
