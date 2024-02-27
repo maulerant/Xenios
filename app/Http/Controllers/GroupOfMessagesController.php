@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\DTO\GroupOfMessageDTO;
 use App\Http\Requests\AddGroupRequest;
-use App\Models\GroupOfMessages;
+use App\Services\GroupOfMessagesService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 
 class GroupOfMessagesController extends Controller
 {
+    public function __construct(
+        protected readonly GroupOfMessagesService $service
+    ) {
+    }
+
     public function index(int $id): JsonResponse
     {
-        $group = GroupOfMessages::findOrFail($id);
+        $group = $this->service->find($id);
 
         return response()->json([
             'success' => true,
@@ -19,23 +24,17 @@ class GroupOfMessagesController extends Controller
         ])->setStatusCode(200);
     }
 
-
     public function all(): JsonResponse
     {
         return response()->json([
             'success' => true,
-            'groups' => GroupOfMessages::query()
-                ->select('group_of_messages.*', DB::raw('max(messages.created_at) as last_message_created_at'))
-                ->leftJoin('messages', 'messages.group_id', 'group_of_messages.id')
-                ->groupBy('group_of_messages.id')
-                ->orderByDesc('last_message_created_at')
-                ->get()
+            'groups' => $this->service->getOrderedByLastMessageCreateTime(),
         ])->setStatusCode(200);
     }
 
     public function add(AddGroupRequest $request): JsonResponse
     {
-        $group = GroupOfMessages::create($request->all());
+        $group = $this->service->create(new GroupOfMessageDTO(name: $request->input('name')));
 
         return response()->json([
             'success' => true,
@@ -45,9 +44,7 @@ class GroupOfMessagesController extends Controller
 
     public function update(int $id, AddGroupRequest $request): JsonResponse
     {
-        $group = GroupOfMessages::findOrFail($id);
-        $group->fill($request->all());
-        $group->save();
+        $this->service->update($id, new GroupOfMessageDTO(name: $request->input('name')));
 
         return response()->json([
             'success' => true,
@@ -57,8 +54,7 @@ class GroupOfMessagesController extends Controller
 
     public function delete(int $id): JsonResponse
     {
-        GroupOfMessages::findOrFail($id)
-            ->delete();
+        $this->service->delete($id);
 
         return response()->json([
             'success' => true,
